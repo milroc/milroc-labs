@@ -1,85 +1,65 @@
-// Headless Open Graph image renderer. Produces og.png (1200×630) using
-// the same buildGraph algorithm the landing page renders at runtime —
-// same font, same node/edge style — so the social preview matches what
-// visitors actually see.
+// Open Graph image renderer. Uses headless Chromium (puppeteer) to load
+// the actual landing page in a 1200×630 viewport at dpr=2, lets the WebGL
+// physics settle for a beat, then screenshots — guaranteeing the OG image
+// matches what the website itself draws.
+//
+// Run after any change to landing.ts / landing.module.css / fonts:
+//   bun run render-og
+// then commit the updated og.png.
 
-import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
+import { serve } from 'bun';
+import puppeteer from 'puppeteer';
+import { createCanvas, loadImage } from '@napi-rs/canvas';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-GlobalFonts.registerFromPath(
-  resolve(import.meta.dir, '../fonts/space-grotesk-latin-wght-normal.woff2'),
-  'Space Grotesk Variable',
-);
+import landing from '../index.html';
 
-const docPolyfill = {
-  createElement: (tag: string) => {
-    if (tag === 'canvas') return createCanvas(1, 1);
-    throw new Error(`document.createElement: unsupported tag "${tag}"`);
+const PORT = 41783;
+const HOST = '127.0.0.1';
+
+const server = serve({
+  port: PORT,
+  hostname: HOST,
+  routes: { '/': landing, '/index.html': landing },
+  development: { hmr: false },
+  async fetch(req: Request): Promise<Response> {
+    // Mirror dev.ts's static fallback so /fonts/*, /favicons/*, etc. resolve.
+    const url = new URL(req.url);
+    const path = '.' + decodeURIComponent(url.pathname);
+    const file = Bun.file(path);
+    if (await file.exists()) return new Response(file);
+    return new Response('not found', { status: 404 });
   },
-};
-(globalThis as unknown as { document: typeof docPolyfill }).document = docPolyfill;
+});
 
-const { buildGraph } = await import('../src/lib/graph');
+const url = `http://${HOST}:${PORT}/`;
+console.log(`server: ${url}`);
 
-const W = 1200;
-const H = 630;
-const CFG = {
-  text: 'milroc labs',
-  font: "'Space Grotesk Variable',sans-serif",
-  weight: 700,
-  nodesPerLetter: 440,
-  k: 24,
-  kMin: 18,
-  nodeRadius: 1.2,
-  edgeAlpha: 0.22,
-  edgeWidth: 2.0,
-  textColor: '#f4ecd9',
-  bgColor: '#3a6b4a',
-};
+const browser = await puppeteer.launch({ headless: true });
+const page = await browser.newPage();
+// dpr=2 so the supersampled WebGL render matches what retina visitors see.
+// We downsample to 1200×630 below.
+await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 2 });
+await page.goto(url, { waitUntil: 'load' });
+await page.evaluate(() => document.fonts.ready);
+// Let the chaos physics settle — without this the dots are still flying
+// in from their seed positions when we capture.
+await new Promise(r => setTimeout(r, 1500));
 
-const g = buildGraph(CFG.text, CFG.font, CFG.weight, W, H, CFG.nodesPerLetter, CFG.k, CFG.kMin);
-console.log(`nodes: ${g.nodes.length / 2}, edges: ${g.edges.length / 2}`);
+const screenshot = await page.screenshot({ type: 'png' });
+await browser.close();
+server.stop();
 
-const canvas = createCanvas(W, H);
-const ctx = canvas.getContext('2d');
+// Downsample the 2400×1260 dpr=2 capture to the canonical 1200×630 OG size.
+const img = await loadImage(screenshot);
+const out = createCanvas(1200, 630);
+const ctx = out.getContext('2d');
+ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingQuality = 'high';
+ctx.drawImage(img, 0, 0, 1200, 630);
+const buf = await out.encode('png');
 
-ctx.fillStyle = CFG.bgColor;
-ctx.fillRect(0, 0, W, H);
-
-// Edges.
-const ec = g.edges.length / 2;
-ctx.strokeStyle = CFG.textColor;
-ctx.globalAlpha = CFG.edgeAlpha;
-ctx.lineWidth = CFG.edgeWidth;
-ctx.lineCap = 'round';
-ctx.beginPath();
-for (let i = 0; i < ec; i++) {
-  const a = g.edges[i * 2], b = g.edges[i * 2 + 1];
-  ctx.moveTo(g.nodes[a * 2], g.nodes[a * 2 + 1]);
-  ctx.lineTo(g.nodes[b * 2], g.nodes[b * 2 + 1]);
-}
-ctx.stroke();
-ctx.globalAlpha = 1;
-
-// Nodes.
-const n = g.nodes.length / 2;
-ctx.fillStyle = CFG.textColor;
-for (let i = 0; i < n; i++) {
-  ctx.beginPath();
-  ctx.arc(g.nodes[i * 2], g.nodes[i * 2 + 1], CFG.nodeRadius, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-// Tagline strip along the bottom edge — small, de-emphasized, same vibe
-// as the runtime tagline on the landing page.
-ctx.font = `400 18px 'Space Grotesk Variable',sans-serif`;
-ctx.fillStyle = 'rgba(244, 236, 217, 0.55)';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'alphabetic';
-ctx.fillText('products, services & experiments by Miles McCrocklin', W / 2, H - 36);
-
-const buf = await canvas.encode('png');
-const path = resolve(import.meta.dir, '../og.png');
-writeFileSync(path, buf);
-console.log(`wrote ${path} (${buf.length} bytes)`);
+const outPath = resolve(import.meta.dir, '../og.png');
+writeFileSync(outPath, buf);
+console.log(`wrote ${outPath} (${buf.length} bytes)`);
