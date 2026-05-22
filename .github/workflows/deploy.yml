@@ -34,6 +34,7 @@ jobs:
           test -f dist/fonts/fonts.css || (echo "missing fonts/fonts.css"; exit 1)
           test -f dist/favicons/favicon-32.png || (echo "missing favicons"; exit 1)
           test -f dist/og.png || (echo "missing og.png"; exit 1)
+          test -f dist/og.mp4 || (echo "missing og.mp4"; exit 1)
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist

@@ -49,10 +49,12 @@ Pushes to `main` are deployed to GitHub Pages via `.github/workflows/deploy.yml`
 │       └── webgl.ts        # compileShader + createProgram
 ├── fonts/                  # self-hosted woff2s + fonts.css
 ├── favicons/               # PNG + SVG favicons (committed; linked from HTML)
-├── og.png                  # 1200×630 Open Graph image (committed; linked from <meta>)
+├── og.png                  # 1200×630 Open Graph still (committed; linked from <meta>)
+├── og.mp4                  # 1200×630 10s OG video — cursor sweeps the wordmark
 ├── scripts/
 │   ├── render-favicon.ts   # headless render → favicons/ (Bun + @napi-rs/canvas)
-│   └── render-og.ts        # headless render → og.png
+│   ├── render-og.ts        # headless render → og.png (puppeteer screenshot)
+│   └── render-og-video.ts  # headless record → og.mp4 (puppeteer screencast + ffmpeg)
 ├── dev.ts                  # Bun fullstack dev server
 ├── build.ts                # Bun.build → dist/
 └── .github/workflows/deploy.yml
@@ -76,12 +78,18 @@ bun run render-favicon
 
 The lab's "Favicon Builder" panel offers an interactive version with on-the-fly param tweaking and per-size PNG download from the browser.
 
-## Open Graph image
+## Open Graph media
 
-`og.png` (1200×630, committed at repo root) is the social-share preview — the "milroc labs" graph network on the forest bg, tagline below. Regenerate after taste tweaks:
+Two committed assets at repo root, both linked from `<meta og:*>` in `index.html`:
+
+- `og.png` (1200×630) — still preview. Headless Chromium screenshot of the actual landing page.
+- `og.mp4` (1200×630, 10s, h.264) — animated preview. Headless Chromium screencast with the virtual cursor sweeping left-to-right through the vertical middle, driving the WebGL mouse-repel field across the whole "milroc labs" wordmark. Transcoded to MP4 (yuv420p) for universal social compatibility. Requires `ffmpeg` on `$PATH`.
+
+Regenerate:
 
 ```sh
-bun run render-og
+bun run render-og        # still
+bun run render-og-video  # 10s mp4
 ```
 
 ## Tech

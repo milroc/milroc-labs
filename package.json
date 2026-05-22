@@ -12,7 +12,8 @@
     "build": "NODE_ENV=production bun build.ts",
     "typecheck": "tsc --noEmit",
     "render-favicon": "bun scripts/render-favicon.ts",
-    "render-og": "bun scripts/render-og.ts"
+    "render-og": "bun scripts/render-og.ts",
+    "render-og-video": "bun scripts/render-og-video.ts"
   },
   "type": "module"
 }

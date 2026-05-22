@@ -30,9 +30,10 @@ if (!result.success) {
 // files as base64 data URLs, ballooning the bundle).
 cpSync('./fonts', './dist/fonts', { recursive: true });
 cpSync('./favicons', './dist/favicons', { recursive: true });
-// OG image — copied as-is so the absolute URL in <meta og:image> resolves
-// to a real file at the apex (https://milroclabs.com/og.png).
+// OG image + video — copied as-is so the absolute URLs in <meta og:image>
+// / <meta og:video> resolve to real files at the apex.
 cpSync('./og.png', './dist/og.png');
+cpSync('./og.mp4', './dist/og.mp4');
 
 writeFileSync('./dist/.nojekyll', '');
 // Custom domain for GH Pages. Without this, the site lives at
