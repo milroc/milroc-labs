@@ -20,10 +20,20 @@ import landing from '../index.html';
 
 const PORT = 41784;
 const HOST = '127.0.0.1';
-const DURATION_MS = 10000;
-const FRAME_HZ = 30;
 const VIEW_W = 1200;
 const VIEW_H = 630;
+const FRAME_HZ = 30;
+
+// Choreography (totals to 10s):
+//   2s — idle: just the wordmark, no cursor interaction
+//   3s — cursor sweeps left → right through the vertical middle (ease-in-out)
+//   3s — cursor sweeps right → left through the vertical middle (ease-in-out)
+//   2s — idle: cursor leaves the canvas, dots settle back to their targets
+const IDLE_START_MS = 2000;
+const SWEEP_FWD_MS = 3000;
+const SWEEP_BACK_MS = 3000;
+const IDLE_END_MS = 2000;
+const DURATION_MS = IDLE_START_MS + SWEEP_FWD_MS + SWEEP_BACK_MS + IDLE_END_MS;
 
 const server = serve({
   port: PORT,
@@ -57,23 +67,40 @@ const webmPath = join(tmp, 'og.webm');
 const recorder = await page.screencast({ path: webmPath });
 console.log(`recording to ${webmPath}`);
 
-// Sweep the cursor across the vertical center over DURATION_MS.
 const startX = 40;
 const endX = VIEW_W - 40;
 const y = VIEW_H / 2;
-const steps = Math.round((DURATION_MS / 1000) * FRAME_HZ);
-const stepMs = DURATION_MS / steps;
-// Position the cursor just outside the viewport-left first so the first
-// mousemove inside the page actually arrives at startX (not "from 0,0").
-await page.mouse.move(-10, y);
-for (let i = 0; i <= steps; i++) {
-  const t = i / steps;
-  // Subtle ease-in-out so the cursor doesn't whip past at constant speed.
-  const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-  const x = startX + (endX - startX) * eased;
-  await page.mouse.move(x, y);
-  await new Promise(r => setTimeout(r, stepMs));
+const easeInOut = (t: number): number => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+async function sweep(fromX: number, toX: number, durationMs: number): Promise<void> {
+  const steps = Math.max(1, Math.round((durationMs / 1000) * FRAME_HZ));
+  const stepMs = durationMs / steps;
+  for (let i = 1; i <= steps; i++) {
+    const eased = easeInOut(i / steps);
+    const x = fromX + (toX - fromX) * eased;
+    await page.mouse.move(x, y);
+    await new Promise(r => setTimeout(r, stepMs));
+  }
 }
+
+// 2s idle: initial state has mouse.active=false (initialized in landing.ts),
+// so the wordmark renders untouched. Just sleep.
+await new Promise(r => setTimeout(r, IDLE_START_MS));
+
+// 3s forward sweep, 3s back. page.mouse.move emits a mousemove, which the
+// canvas's listener picks up and sets mouse.active=true.
+await page.mouse.move(startX, y);
+await sweep(startX, endX, SWEEP_FWD_MS);
+await sweep(endX, startX, SWEEP_BACK_MS);
+
+// 2s idle outro: fire a synthetic mouseleave on the canvas so the landing
+// resets mouse.active=false (otherwise the repel field stays engaged at
+// wherever the cursor stopped, even though no further moves arrive).
+await page.evaluate(() => {
+  const c = document.getElementById('gl-canvas');
+  if (c) c.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+});
+await new Promise(r => setTimeout(r, IDLE_END_MS));
 
 await recorder.stop();
 await browser.close();
