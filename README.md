@@ -49,8 +49,10 @@ Pushes to `main` are deployed to GitHub Pages via `.github/workflows/deploy.yml`
 │       └── webgl.ts        # compileShader + createProgram
 ├── fonts/                  # self-hosted woff2s + fonts.css
 ├── favicons/               # PNG + SVG favicons (committed; linked from HTML)
+├── og.png                  # 1200×630 Open Graph image (committed; linked from <meta>)
 ├── scripts/
-│   └── render-favicon.ts   # headless render → favicons/ (Bun + @napi-rs/canvas)
+│   ├── render-favicon.ts   # headless render → favicons/ (Bun + @napi-rs/canvas)
+│   └── render-og.ts        # headless render → og.png
 ├── dev.ts                  # Bun fullstack dev server
 ├── build.ts                # Bun.build → dist/
 └── .github/workflows/deploy.yml
@@ -73,6 +75,14 @@ bun run render-favicon
 ```
 
 The lab's "Favicon Builder" panel offers an interactive version with on-the-fly param tweaking and per-size PNG download from the browser.
+
+## Open Graph image
+
+`og.png` (1200×630, committed at repo root) is the social-share preview — the "milroc labs" graph network on the forest bg, tagline below. Regenerate after taste tweaks:
+
+```sh
+bun run render-og
+```
 
 ## Tech
 

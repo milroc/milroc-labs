@@ -10,7 +10,8 @@
     "dev": "NODE_ENV=development bun --hot dev.ts",
     "build": "NODE_ENV=production bun build.ts",
     "typecheck": "tsc --noEmit",
-    "render-favicon": "bun scripts/render-favicon.ts"
+    "render-favicon": "bun scripts/render-favicon.ts",
+    "render-og": "bun scripts/render-og.ts"
   },
   "type": "module"
 }
