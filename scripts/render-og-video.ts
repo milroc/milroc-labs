@@ -24,13 +24,13 @@ const VIEW_W = 1200;
 const VIEW_H = 630;
 const FRAME_HZ = 30;
 
-// Choreography (totals to 7s):
+// Choreography (totals to 10s):
 //   2s — idle: just the wordmark, no cursor interaction
-//   3s — cursor sweeps left → right through the vertical middle (ease-in-out)
-//   2s — idle: cursor leaves the canvas, dots settle back to their targets
+//   3s — cursor sweeps left → right through the vertical middle (linear)
+//   5s — idle: cursor leaves the canvas, dots settle back to their targets
 const IDLE_START_MS = 2000;
 const SWEEP_FWD_MS = 3000;
-const IDLE_END_MS = 2000;
+const IDLE_END_MS = 5000;
 const DURATION_MS = IDLE_START_MS + SWEEP_FWD_MS + IDLE_END_MS;
 
 const server = serve({
@@ -68,14 +68,12 @@ console.log(`recording to ${webmPath}`);
 const startX = 40;
 const endX = VIEW_W - 40;
 const y = VIEW_H / 2;
-const easeInOut = (t: number): number => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-
 async function sweep(fromX: number, toX: number, durationMs: number): Promise<void> {
   const steps = Math.max(1, Math.round((durationMs / 1000) * FRAME_HZ));
   const stepMs = durationMs / steps;
   for (let i = 1; i <= steps; i++) {
-    const eased = easeInOut(i / steps);
-    const x = fromX + (toX - fromX) * eased;
+    const t = i / steps;
+    const x = fromX + (toX - fromX) * t;
     await page.mouse.move(x, y);
     await new Promise(r => setTimeout(r, stepMs));
   }
