@@ -24,16 +24,14 @@ const VIEW_W = 1200;
 const VIEW_H = 630;
 const FRAME_HZ = 30;
 
-// Choreography (totals to 10s):
+// Choreography (totals to 7s):
 //   2s — idle: just the wordmark, no cursor interaction
 //   3s — cursor sweeps left → right through the vertical middle (ease-in-out)
-//   3s — cursor sweeps right → left through the vertical middle (ease-in-out)
 //   2s — idle: cursor leaves the canvas, dots settle back to their targets
 const IDLE_START_MS = 2000;
 const SWEEP_FWD_MS = 3000;
-const SWEEP_BACK_MS = 3000;
 const IDLE_END_MS = 2000;
-const DURATION_MS = IDLE_START_MS + SWEEP_FWD_MS + SWEEP_BACK_MS + IDLE_END_MS;
+const DURATION_MS = IDLE_START_MS + SWEEP_FWD_MS + IDLE_END_MS;
 
 const server = serve({
   port: PORT,
@@ -87,11 +85,10 @@ async function sweep(fromX: number, toX: number, durationMs: number): Promise<vo
 // so the wordmark renders untouched. Just sleep.
 await new Promise(r => setTimeout(r, IDLE_START_MS));
 
-// 3s forward sweep, 3s back. page.mouse.move emits a mousemove, which the
-// canvas's listener picks up and sets mouse.active=true.
+// 3s forward sweep. page.mouse.move emits a mousemove, which the canvas's
+// listener picks up and sets mouse.active=true.
 await page.mouse.move(startX, y);
 await sweep(startX, endX, SWEEP_FWD_MS);
-await sweep(endX, startX, SWEEP_BACK_MS);
 
 // 2s idle outro: fire a synthetic mouseleave on the canvas so the landing
 // resets mouse.active=false (otherwise the repel field stays engaged at
