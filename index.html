@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Milroc Labs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Milroc Labs LLC — a one-person studio for projects by Miles McCrocklin." />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicons/favicon-180.png" />
+  <!--
+    fonts.css is NOT linked here. Bun's HTML bundler walks every <link>
+    (including rel="preload") and tries to bundle the woff2 URLs inside
+    the linked CSS, which inlines them as base64 and balloons the CSS
+    bundle. JS injects the <link> at runtime — see src/lib/load-fonts.ts.
+  -->
+
+</head>
+<body>
+  <canvas id="gl-canvas"></canvas>
+  <p class="tagline">products, services &amp; experiments by <a href="https://miles.mccrockl.in" target="_blank" rel="noopener">Miles M<span class="mc">c</span>Crocklin</a></p>
+  <script type="module" src="./src/landing.ts"></script>
+</body>
+</html>

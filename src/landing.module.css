@@ -1,0 +1,55 @@
+:global(html), :global(body) {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #3a6b4a;
+  overflow: hidden;
+}
+
+:global(#gl-canvas) {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+:global(.tagline) {
+  position: fixed;
+  bottom: clamp(16px, 3vh, 32px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-family: 'Space Grotesk Variable', sans-serif;
+  font-weight: 400;
+  font-size: clamp(11px, 1vw, 13px);
+  letter-spacing: .02em;
+  color: rgba(244, 236, 217, 0.5);
+  pointer-events: none;
+}
+
+:global(.tagline a) {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  pointer-events: auto;
+  transition: opacity .15s ease;
+}
+
+:global(.tagline a:hover) {
+  opacity: .75;
+}
+
+/* Superscript "c" in McCrocklin. Custom span (not <sup>) so we can tune
+   font-size, baseline shift, and tracking on either side independently —
+   <sup>'s defaults look floaty next to the surrounding caps. */
+:global(.tagline .mc) {
+  font-size: 0.62em;
+  vertical-align: 0.42em;
+  font-weight: 500;
+  /* Pull the c tight against M on the left, slight breathing room before C. */
+  margin-left: -0.04em;
+  margin-right: 0.02em;
+  letter-spacing: 0;
+  line-height: 1;
+}

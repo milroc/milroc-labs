@@ -1,0 +1,16 @@
+{
+  "name": "milroc-labs",
+  "devDependencies": {
+    "@napi-rs/canvas": "^1.0.0",
+    "bun-types": "latest",
+    "typescript": "^6.0.3"
+  },
+  "private": true,
+  "scripts": {
+    "dev": "NODE_ENV=development bun --hot dev.ts",
+    "build": "NODE_ENV=production bun build.ts",
+    "typecheck": "tsc --noEmit",
+    "render-favicon": "bun scripts/render-favicon.ts"
+  },
+  "type": "module"
+}
